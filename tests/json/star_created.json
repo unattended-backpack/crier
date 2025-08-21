@@ -1,0 +1,16 @@
+{
+    "action": "created",
+    "starred_at": "2024-01-01T00:00:00Z",
+    "repository": {
+        "id": 123456789,
+        "name": "repo",
+        "full_name": "test/repo",
+        "html_url": "https://github.com/test/repo",
+        "stargazers_count": 43
+    },
+    "sender": {
+        "login": "stargazer",
+        "id": 456,
+        "html_url": "https://github.com/stargazer"
+    }
+}

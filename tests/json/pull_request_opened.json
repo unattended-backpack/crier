@@ -1,0 +1,34 @@
+{
+    "action": "opened",
+    "number": 42,
+    "pull_request": {
+        "id": 42000,
+        "number": 42,
+        "state": "open",
+        "title": "Feature: Add support for feature #42",
+        "body": "This PR adds support for feature #42.\n\n## Changes\n- Added new module\n- Updated documentation",
+        "html_url": "https://github.com/test/repo/pull/42",
+        "user": {
+            "login": "contributor",
+            "id": 123,
+            "html_url": "https://github.com/contributor"
+        },
+        "merged": false,
+        "draft": false,
+        "additions": 142,
+        "deletions": 28,
+        "changed_files": 7
+    },
+    "repository": {
+        "id": 123456789,
+        "name": "repo",
+        "full_name": "test/repo",
+        "html_url": "https://github.com/test/repo",
+        "stargazers_count": 42
+    },
+    "sender": {
+        "login": "contributor",
+        "id": 123,
+        "html_url": "https://github.com/contributor"
+    }
+}
