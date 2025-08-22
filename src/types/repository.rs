@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 use super::{User, Visibility};
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -51,8 +51,10 @@ pub struct Repository {
     pub deployments_url: String,
     
     // Timestamps
+    #[serde(deserialize_with = "deserialize_timestamp")]
     pub created_at: String,
     pub updated_at: String,
+    #[serde(deserialize_with = "deserialize_optional_timestamp", default)]
     pub pushed_at: Option<String>,
     
     // Repository stats
@@ -137,4 +139,99 @@ pub struct SecurityAndAnalysis {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct SecurityFeature {
     pub status: String,
+}
+
+/// Deserialize a timestamp that can be either a Unix timestamp (integer) or ISO 8601 string
+fn deserialize_timestamp<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    use std::fmt;
+
+    struct TimestampVisitor;
+
+    impl<'de> Visitor<'de> for TimestampVisitor {
+        type Value = String;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a Unix timestamp or ISO 8601 date string")
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<String, E>
+        where
+            E: de::Error,
+        {
+            // Convert Unix timestamp to ISO 8601 string
+            use chrono::{DateTime, Utc};
+            let dt = DateTime::from_timestamp(value, 0)
+                .ok_or_else(|| de::Error::custom(format!("Invalid timestamp: {}", value)))?;
+            Ok(dt.to_rfc3339())
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<String, E>
+        where
+            E: de::Error,
+        {
+            self.visit_i64(value as i64)
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<String, E>
+        where
+            E: de::Error,
+        {
+            Ok(value.to_string())
+        }
+
+        fn visit_string<E>(self, value: String) -> Result<String, E>
+        where
+            E: de::Error,
+        {
+            Ok(value)
+        }
+    }
+
+    deserializer.deserialize_any(TimestampVisitor)
+}
+
+/// Deserialize an optional timestamp that can be either a Unix timestamp (integer) or ISO 8601 string
+fn deserialize_optional_timestamp<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    use std::fmt;
+
+    struct OptionalTimestampVisitor;
+
+    impl<'de> Visitor<'de> for OptionalTimestampVisitor {
+        type Value = Option<String>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("null, a Unix timestamp, or ISO 8601 date string")
+        }
+
+        fn visit_none<E>(self) -> Result<Option<String>, E>
+        where
+            E: de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_some<D>(self, deserializer: D) -> Result<Option<String>, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            deserialize_timestamp(deserializer).map(Some)
+        }
+
+        fn visit_unit<E>(self) -> Result<Option<String>, E>
+        where
+            E: de::Error,
+        {
+            Ok(None)
+        }
+    }
+
+    deserializer.deserialize_option(OptionalTimestampVisitor)
 }
