@@ -57,11 +57,11 @@ pub fn transform_to_discord(event_type: &str, event_json: serde_json::Value) -> 
             // Debug: Check which variant was matched
             match &event {
                 events::GitHubEvent::Unknown(_) => {
-                    eprintln!("INFO: {} event handled as Unknown variant (not yet implemented)", event_type);
+                    // Unknown events will be logged with full schema in the transform_to_discord method
                 }
                 _ => {
-                    // Successfully matched a specific event type
-                    eprintln!("Successfully matched {} event to specific type", event_type);
+                    // Successfully matched a specific event type - you can enable this for debugging
+                    // eprintln!("Successfully matched {} event to specific type", event_type);
                 }
             }
             // Use the event's built-in transform method

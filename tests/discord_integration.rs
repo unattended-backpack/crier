@@ -83,6 +83,7 @@ fn get_all_events() -> Vec<(&'static str, &'static str)> {
             "secret_scanning_alert_location",
             "secret_scanning_alert_location.json",
         ),
+        ("secret_scanning_scan", "secret_scanning_scan.json"),
         ("dependabot_alert", "dependabot_alert.json"),
         ("security_advisory", "security_advisory.json"),
         (

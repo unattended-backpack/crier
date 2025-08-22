@@ -67,6 +67,7 @@ pub mod custom_property;
 pub mod custom_property_values;
 pub mod security_and_analysis;
 pub mod secret_scanning_alert_location;
+pub mod secret_scanning_scan;
 
 pub use push::PushEvent;
 pub use pull_request::PullRequestEvent;
@@ -132,6 +133,7 @@ pub use custom_property::CustomPropertyEvent;
 pub use custom_property_values::CustomPropertyValuesEvent;
 pub use security_and_analysis::SecurityAndAnalysisEvent;
 pub use secret_scanning_alert_location::SecretScanningAlertLocationEvent;
+pub use secret_scanning_scan::SecretScanningScanEvent;
 
 // Master enum of all GitHub webhook events
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -194,6 +196,7 @@ pub enum GitHubEvent {
     CustomPropertyValues(CustomPropertyValuesEvent),
     SecurityAndAnalysis(SecurityAndAnalysisEvent),
     SecretScanningAlertLocation(SecretScanningAlertLocationEvent),
+    SecretScanningScan(SecretScanningScanEvent),
     
     // Events with minimal required fields last to prevent false matches
     CommitComment(CommitCommentEvent),
@@ -272,6 +275,7 @@ impl GitHubEvent {
             "repository_advisory" => serde_json::from_value::<RepositoryAdvisoryEvent>(json).map(GitHubEvent::RepositoryAdvisory),
             "secret_scanning_alert" => serde_json::from_value::<SecretScanningAlertEvent>(json).map(GitHubEvent::SecretScanningAlert),
             "secret_scanning_alert_location" => serde_json::from_value::<SecretScanningAlertLocationEvent>(json).map(GitHubEvent::SecretScanningAlertLocation),
+            "secret_scanning_scan" => serde_json::from_value::<SecretScanningScanEvent>(json).map(GitHubEvent::SecretScanningScan),
             "security_advisory" => serde_json::from_value::<SecurityAdvisoryEvent>(json).map(GitHubEvent::SecurityAdvisory),
             "security_and_analysis" => serde_json::from_value::<SecurityAndAnalysisEvent>(json).map(GitHubEvent::SecurityAndAnalysis),
             "sponsorship" => serde_json::from_value::<SponsorshipEvent>(json).map(GitHubEvent::Sponsorship),
@@ -352,18 +356,65 @@ impl GitHubEvent {
             GitHubEvent::CustomPropertyValues(e) => e.to_discord_embed(event_type),
             GitHubEvent::SecurityAndAnalysis(e) => e.to_discord_embed(event_type),
             GitHubEvent::SecretScanningAlertLocation(e) => e.to_discord_embed(event_type),
+            GitHubEvent::SecretScanningScan(e) => e.to_discord_embed(event_type),
             GitHubEvent::Public(e) => e.to_discord_embed(event_type),
-            GitHubEvent::Unknown(_v) => {
+            GitHubEvent::Unknown(v) => {
+                // Log the full event data for unknown events
+                eprintln!("===============================================");
+                eprintln!("UNKNOWN EVENT RECEIVED: {}", event_type);
+                eprintln!("===============================================");
+                eprintln!("Full event JSON schema:");
+                eprintln!("{}", serde_json::to_string_pretty(&v).unwrap_or_else(|e| {
+                    format!("Failed to serialize JSON: {}", e)
+                }));
+                eprintln!("===============================================");
+                
+                // Extract basic info for Discord display
+                let repo_name = v.get("repository")
+                    .and_then(|r| r.get("full_name"))
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("unknown");
+                
+                let sender = v.get("sender")
+                    .and_then(|s| s.get("login"))
+                    .and_then(|l| l.as_str())
+                    .unwrap_or("unknown");
+                
+                let action = v.get("action")
+                    .and_then(|a| a.as_str())
+                    .map(|a| format!(" (action: {})", a))
+                    .unwrap_or_default();
+                
                 // Fallback for unknown events
                 crate::DiscordEmbed {
-                    title: format!("{} event", event_type.replace('_', " ")),
-                    description: Some(format!("Unknown event type: {}", event_type)),
+                    title: format!("⚠️ Unknown: {} event", event_type.replace('_', " ")),
+                    description: Some(format!(
+                        "Received unknown event type '{}'{} in repository {} by @{}.\n\n\
+                        ⚠️ Full event data has been logged to console for analysis.",
+                        event_type, action, repo_name, sender
+                    )),
                     url: None,
-                    color: crate::transform::Colors::GRAY,
+                    color: crate::transform::Colors::YELLOW,
                     author: None,
-                    fields: vec![],
+                    fields: vec![
+                        crate::DiscordField {
+                            name: "Event Type".to_string(),
+                            value: format!("`{}`", event_type),
+                            inline: true,
+                        },
+                        crate::DiscordField {
+                            name: "Repository".to_string(),
+                            value: repo_name.to_string(),
+                            inline: true,
+                        },
+                        crate::DiscordField {
+                            name: "Sender".to_string(),
+                            value: format!("@{}", sender),
+                            inline: true,
+                        },
+                    ],
                     footer: Some(crate::DiscordFooter {
-                        text: "GitHub".to_string(),
+                        text: "GitHub Unknown Event".to_string(),
                         icon_url: Some(
                             "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
                                 .to_string(),
