@@ -61,6 +61,8 @@ pub struct ProjectV2ItemContent {
 pub struct ProjectV2ItemChanges {
     pub field_value: Option<FieldValueChange>,
     pub archived_at: Option<ProjectV2ItemChange<Option<String>>>,
+    pub body: Option<ProjectV2ItemChange<Option<String>>>,
+    pub title: Option<ProjectV2ItemChange<Option<String>>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -156,6 +158,24 @@ impl DiscordTransform for ProjectsV2ItemEvent {
         if self.action == ProjectsV2ItemAction::Edited {
             if let Some(changes) = &self.changes {
                 let mut change_items = vec![];
+
+                if let Some(title_change) = &changes.title {
+                    let from = title_change.from.as_deref().unwrap_or("(none)");
+                    let to = title_change.to.as_ref().and_then(|t| t.as_deref()).unwrap_or("(none)");
+                    change_items.push(format!("**Title:** {} → {}",
+                        if from.len() > 50 { format!("{}...", &from[..47]) } else { from.to_string() },
+                        if to.len() > 50 { format!("{}...", &to[..47]) } else { to.to_string() }
+                    ));
+                }
+
+                if let Some(body_change) = &changes.body {
+                    let from = body_change.from.as_deref().unwrap_or("(none)");
+                    let to = body_change.to.as_ref().and_then(|t| t.as_deref()).unwrap_or("(none)");
+                    change_items.push(format!("**Body:** {} → {}",
+                        if from.len() > 50 { format!("{}...", &from[..47]) } else { from.to_string() },
+                        if to.len() > 50 { format!("{}...", &to[..47]) } else { to.to_string() }
+                    ));
+                }
 
                 if let Some(field_value) = &changes.field_value {
                     let field_name = field_value.field_name.as_deref().unwrap_or("Unknown field");
