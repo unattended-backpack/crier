@@ -26,4 +26,5 @@ pub struct User {
     pub name: Option<String>,
     pub email: Option<String>,
     pub starred_at: Option<String>,
+    pub user_view_type: Option<String>,
 }
