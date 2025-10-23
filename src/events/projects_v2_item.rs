@@ -71,6 +71,8 @@ pub struct FieldValueChange {
     pub field_type: String,
     pub field_name: Option<String>,
     pub project_number: Option<i64>,
+    pub from: Option<serde_json::Value>,
+    pub to: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -179,7 +181,33 @@ impl DiscordTransform for ProjectsV2ItemEvent {
 
                 if let Some(field_value) = &changes.field_value {
                     let field_name = field_value.field_name.as_deref().unwrap_or("Unknown field");
-                    change_items.push(format!("**{}** updated ({})", field_name, field_value.field_type));
+
+                    // Try to extract meaningful values from the from/to JSON
+                    let from_str = field_value.from.as_ref()
+                        .and_then(|v| {
+                            // If it's an object with a "name" field, use that
+                            if let Some(obj) = v.as_object() {
+                                obj.get("name").and_then(|n| n.as_str()).map(String::from)
+                            } else {
+                                // Otherwise convert to string
+                                Some(v.to_string())
+                            }
+                        })
+                        .unwrap_or_else(|| "(none)".to_string());
+
+                    let to_str = field_value.to.as_ref()
+                        .and_then(|v| {
+                            // If it's an object with a "name" field, use that
+                            if let Some(obj) = v.as_object() {
+                                obj.get("name").and_then(|n| n.as_str()).map(String::from)
+                            } else {
+                                // Otherwise convert to string
+                                Some(v.to_string())
+                            }
+                        })
+                        .unwrap_or_else(|| "(none)".to_string());
+
+                    change_items.push(format!("**{}:** {} → {}", field_name, from_str, to_str));
                 }
 
                 if let Some(archived_change) = &changes.archived_at {
