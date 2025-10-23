@@ -42,6 +42,8 @@ pub mod code_scanning_alert;
 pub mod secret_scanning_alert;
 pub mod dependabot_alert;
 pub mod project;
+pub mod projects_v2;
+pub mod projects_v2_item;
 pub mod discussion;
 pub mod installation;
 pub mod installation_repositories;
@@ -108,6 +110,8 @@ pub use code_scanning_alert::CodeScanningAlertEvent;
 pub use secret_scanning_alert::SecretScanningAlertEvent;
 pub use dependabot_alert::DependabotAlertEvent;
 pub use project::ProjectEvent;
+pub use projects_v2::ProjectsV2Event;
+pub use projects_v2_item::ProjectsV2ItemEvent;
 pub use discussion::DiscussionEvent;
 pub use installation::InstallationEvent;
 pub use installation_repositories::InstallationRepositoriesEvent;
@@ -174,6 +178,8 @@ pub enum GitHubEvent {
     SecretScanningAlert(SecretScanningAlertEvent),
     DependabotAlert(DependabotAlertEvent),
     Project(ProjectEvent),
+    ProjectsV2(ProjectsV2Event),
+    ProjectsV2Item(ProjectsV2ItemEvent),
     Discussion(DiscussionEvent),
     Installation(InstallationEvent),
     InstallationRepositories(InstallationRepositoriesEvent),
@@ -252,8 +258,8 @@ impl GitHubEvent {
             "project" => serde_json::from_value::<ProjectEvent>(json).map(GitHubEvent::Project),
             "project_card" => serde_json::from_value::<ProjectCardEvent>(json).map(GitHubEvent::ProjectCard),
             "project_column" => serde_json::from_value::<ProjectColumnEvent>(json).map(GitHubEvent::ProjectColumn),
-            // "projects_v2" => serde_json::from_value::<ProjectsV2Event>(json).map(GitHubEvent::ProjectsV2),
-            // "projects_v2_item" => serde_json::from_value::<ProjectsV2ItemEvent>(json).map(GitHubEvent::ProjectsV2Item),
+            "projects_v2" => serde_json::from_value::<ProjectsV2Event>(json).map(GitHubEvent::ProjectsV2),
+            "projects_v2_item" => serde_json::from_value::<ProjectsV2ItemEvent>(json).map(GitHubEvent::ProjectsV2Item),
             "check_run" => serde_json::from_value::<CheckRunEvent>(json).map(GitHubEvent::CheckRun),
             "check_suite" => serde_json::from_value::<CheckSuiteEvent>(json).map(GitHubEvent::CheckSuite),
             "code_scanning_alert" => serde_json::from_value::<CodeScanningAlertEvent>(json).map(GitHubEvent::CodeScanningAlert),
@@ -331,6 +337,8 @@ impl GitHubEvent {
             GitHubEvent::SecretScanningAlert(e) => e.to_discord_embed(event_type),
             GitHubEvent::DependabotAlert(e) => e.to_discord_embed(event_type),
             GitHubEvent::Project(e) => e.to_discord_embed(event_type),
+            GitHubEvent::ProjectsV2(e) => e.to_discord_embed(event_type),
+            GitHubEvent::ProjectsV2Item(e) => e.to_discord_embed(event_type),
             GitHubEvent::Discussion(e) => e.to_discord_embed(event_type),
             GitHubEvent::Installation(e) => e.to_discord_embed(event_type),
             GitHubEvent::InstallationRepositories(e) => e.to_discord_embed(event_type),
